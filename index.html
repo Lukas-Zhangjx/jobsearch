@@ -416,12 +416,12 @@ textarea { resize: vertical; min-height: 72px; line-height: 1.6; }
 <div id="setupScreen">
   <div class="setup-card">
     <div class="setup-logo">JOB SEARCH</div>
-    <div class="setup-sub">// ASSISTANT v1.0 — POWERED BY GEMINI</div>
+    <div class="setup-sub">// ASSISTANT v1.0 — POWERED BY GROQ</div>
 
-    <label class="setup-label">GEMINI API KEY</label>
-    <input type="password" class="setup-input" id="setupKey" placeholder="AIza..." />
+    <label class="setup-label">GROQ API KEY</label>
+    <input type="password" class="setup-input" id="setupKey" placeholder="gsk_..." />
     <div class="setup-hint">
-      免费申请：<a href="https://aistudio.google.com" target="_blank">aistudio.google.com</a> → 登录 Google → Get API Key → Create API Key<br>
+      免费申请：<a href="https://console.groq.com" target="_blank">console.groq.com</a> → 用 Google 登录 → API Keys → Create API Key<br>
       Key 仅存储在你的浏览器本地，不会上传到任何服务器。
     </div>
     <button class="btn-accent" onclick="initApp()">进入工具</button>
@@ -640,7 +640,7 @@ textarea { resize: vertical; min-height: 72px; line-height: 1.6; }
 </div>
 
 <script>
-const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+const GROQ_BASE = 'https://api.groq.com/openai/v1/chat/completions';
 
 let apiKey = '';
 let profile = { name:'', city:'', industry:'', skills:[], projects:'', languages:[], genLang:'Deutsch', jobType:'Vollzeit', note:'' };
@@ -654,9 +654,9 @@ let currentResult = '';
 // ── SETUP ──────────────────────────────────────────────────
 function initApp() {
   const k = document.getElementById('setupKey').value.trim();
-  if (!k || !k.startsWith('AIza')) { alert('请输入有效的 Gemini API Key（以 AIza 开头）'); return; }
+  if (!k || !k.startsWith('gsk_')) { alert('请输入有效的 Groq API Key（以 gsk_ 开头）'); return; }
   apiKey = k;
-  localStorage.setItem('gemini_key', k);
+  localStorage.setItem('groq_key', k);
   showApp();
 }
 
@@ -666,7 +666,7 @@ function importFromSetup(e) {
   r.onload = ev => {
     try {
       const data = JSON.parse(ev.target.result);
-      if (data.apiKey) { apiKey = data.apiKey; localStorage.setItem('gemini_key', apiKey); }
+      if (data.apiKey) { apiKey = data.apiKey; localStorage.setItem('groq_key', apiKey); }
       profile = { ...profile, ...data };
       skillTags = profile.skills || [];
       showApp();
@@ -683,13 +683,13 @@ function showApp() {
 }
 
 function changeKey() {
-  const k = prompt('输入新的 Gemini API Key：');
-  if (k && k.startsWith('AIza')) { apiKey = k; localStorage.setItem('gemini_key', k); alert('API Key 已更新'); }
+  const k = prompt('输入新的 Groq API Key：');
+  if (k && k.startsWith('gsk_')) { apiKey = k; localStorage.setItem('groq_key', k); alert('API Key 已更新'); }
 }
 
 // auto-restore key on load
 window.addEventListener('load', () => {
-  const k = localStorage.getItem('gemini_key');
+  const k = localStorage.getItem('groq_key');
   if (k) { apiKey = k; document.getElementById('setupKey').value = k; }
   const p = localStorage.getItem('jsa_profile');
   if (p) { try { profile = JSON.parse(p); skillTags = profile.skills || []; } catch {} }
@@ -821,20 +821,27 @@ function clearProfile() {
   applyProfileToUI(); markDirty();
 }
 
-// ── GEMINI API ─────────────────────────────────────────────
-async function callGemini(prompt, history) {
-  const contents = history ? history : [{ role:'user', parts:[{text: prompt}] }];
-  const resp = await fetch(`${GEMINI_BASE}?key=${apiKey}`, {
+// ── GROQ API ───────────────────────────────────────────────
+async function callDeepSeek(prompt, history) {
+  const messages = history ? history : [{ role:'user', content: prompt }];
+  const resp = await fetch(GROQ_BASE, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ contents, generationConfig: { maxOutputTokens: 1500 } })
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages,
+      max_tokens: 2000
+    })
   });
   if (!resp.ok) {
     const err = await resp.json();
     throw new Error(err.error?.message || 'API 错误');
   }
   const data = await resp.json();
-  return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  return data.choices?.[0]?.message?.content || '';
 }
 
 // ── SEARCH ─────────────────────────────────────────────────
@@ -875,7 +882,7 @@ Focus on non-automotive embedded roles (industrial, medical, aerospace, IoT). In
 Only show matchScore >= 65. Return ONLY the JSON array, no markdown.`;
 
   try {
-    const text = await callGemini(prompt);
+    const text = await callDeepSeek(prompt);
     const clean = text.replace(/```json|```/g, '').trim();
     const start = clean.indexOf('['), end = clean.lastIndexOf(']');
     jobs = JSON.parse(clean.slice(start, end + 1));
@@ -981,11 +988,11 @@ ${langNote}
 - Vary sentence length
 - Sound like a real person wrote this, not AI`;
 
-  genHistory = [{ role:'user', parts:[{text: userMsg}] }];
+  genHistory = [{ role:'user', content: userMsg }];
 
   try {
-    const text = await callGemini(null, genHistory);
-    genHistory.push({ role:'model', parts:[{text}] });
+    const text = await callDeepSeek(null, genHistory);
+    genHistory.push({ role:'assistant', content: text });
     currentResult = text;
     document.getElementById('genModalTitle').textContent = '✓ 生成完成';
     document.getElementById('genResult').textContent = text;
@@ -1002,10 +1009,10 @@ async function refineGen() {
   if (!fb) return;
   document.getElementById('genModalTitle').textContent = '优化中...';
   document.getElementById('feedbackInput').value = '';
-  genHistory.push({ role:'user', parts:[{text:'Please revise based on this feedback: ' + fb}] });
+  genHistory.push({ role:'user', content: 'Please revise based on this feedback: ' + fb });
   try {
-    const text = await callGemini(null, genHistory);
-    genHistory.push({ role:'model', parts:[{text}] });
+    const text = await callDeepSeek(null, genHistory);
+    genHistory.push({ role:'assistant', content: text });
     currentResult = text;
     document.getElementById('genModalTitle').textContent = '✓ 优化完成';
     document.getElementById('genResult').textContent = text;
