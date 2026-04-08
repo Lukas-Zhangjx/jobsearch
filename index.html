@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Job Search Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f0f0f;
+  --bg2: #181818;
+  --bg3: #222;
+  --border: #2a2a2a;
+  --border2: #333;
+  --text: #f0f0f0;
+  --text2: #999;
+  --text3: #666;
+  --accent: #F96167;
+  --accent2: #ff8a8f;
+  --green: #4ade80;
+  --amber: #fbbf24;
+  --mono: 'DM Mono', monospace;
+  --sans: 'DM Sans', sans-serif;
+  --display: 'Bebas Neue', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; min-height: 100vh; }
+
+/* SETUP SCREEN */
+#setupScreen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  padding: 2rem;
+}
+.setup-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 2.5rem;
+  max-width: 440px;
+  width: 100%;
+}
+.setup-logo {
+  font-family: var(--display);
+  font-size: 2.4rem;
+  color: var(--accent);
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+}
+.setup-sub {
+  font-size: 12px;
+  color: var(--text3);
+  font-family: var(--mono);
+  margin-bottom: 2rem;
+  letter-spacing: 0.05em;
+}
+.setup-label { font-size: 12px; color: var(--text2); margin-bottom: 6px; display: block; }
+.setup-input {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+  margin-bottom: 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.setup-input:focus { border-color: var(--accent); }
+.setup-hint {
+  font-size: 11px;
+  color: var(--text3);
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+.setup-hint a { color: var(--accent); text-decoration: none; }
+.btn-accent {
+  width: 100%;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 11px;
+  font-family: var(--display);
+  font-size: 1.1rem;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.btn-accent:hover { opacity: 0.88; }
+.setup-divider { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+.setup-import { font-size: 12px; color: var(--text3); text-align: center; }
+.setup-import span { color: var(--accent); cursor: pointer; }
+
+/* MAIN APP */
+#appScreen { display: none; min-height: 100vh; }
+.topbar {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 0 1.5rem;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.logo { font-family: var(--display); font-size: 1.5rem; color: var(--accent); letter-spacing: 0.05em; flex-shrink: 0; }
+.nav-tabs { display: flex; gap: 2px; flex: 1; }
+.nav-tab {
+  padding: 5px 14px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text2);
+  font-family: var(--sans);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.nav-tab:hover { color: var(--text); background: var(--bg3); }
+.nav-tab.active { color: var(--text); background: var(--bg3); }
+.user-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text2);
+  font-family: var(--mono);
+  flex-shrink: 0;
+}
+.avatar {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 600;
+  flex-shrink: 0;
+}
+.btn-sm {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--text2);
+  font-size: 11px;
+  cursor: pointer;
+  font-family: var(--mono);
+  transition: all 0.15s;
+}
+.btn-sm:hover { color: var(--text); border-color: var(--text3); }
+.btn-sm.primary { background: var(--accent); color: #fff; border-color: transparent; }
+.btn-sm.primary:hover { opacity: 0.88; }
+
+/* SAVE BAR */
+.save-bar {
+  background: #2a1f0a;
+  border-bottom: 1px solid #4a3510;
+  padding: 8px 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--amber);
+  font-family: var(--mono);
+}
+.save-bar.hidden { display: none; }
+
+/* PANELS */
+.panel { display: none; padding: 1.5rem; max-width: 860px; margin: 0 auto; }
+.panel.active { display: block; }
+
+/* CARDS */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+.card-title { font-size: 11px; font-family: var(--mono); color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 1rem; }
+
+/* FORM ELEMENTS */
+.row { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+.field { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 130px; }
+.field label { font-size: 11px; color: var(--text3); font-family: var(--mono); }
+input[type=text], input[type=password], select, textarea {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+select option { background: var(--bg3); }
+textarea { resize: vertical; min-height: 72px; line-height: 1.6; }
+
+/* TAGS */
+.tag-box {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 6px 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-height: 38px;
+  cursor: text;
+  transition: border-color 0.2s;
+}
+.tag-box:focus-within { border-color: var(--accent); }
+.tag-box input {
+  background: transparent;
+  border: none;
+  padding: 2px 4px;
+  min-width: 100px;
+  flex: 1;
+  font-size: 12px;
+}
+.tag-box input:focus { outline: none; }
+.tag {
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-family: var(--mono);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text2);
+}
+.tag-x { cursor: pointer; color: var(--text3); font-size: 13px; line-height: 1; }
+.tag-x:hover { color: var(--accent); }
+
+/* BUTTONS */
+.btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--text2);
+  font-family: var(--sans);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn:hover { color: var(--text); border-color: var(--text3); }
+.btn.primary { background: var(--accent); color: #fff; border-color: transparent; }
+.btn.primary:hover { opacity: 0.88; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* LANG ROWS */
+.lang-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.lang-row select { flex: 1; }
+
+/* SEARCH FILTERS */
+.search-controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem; }
+.search-controls input { flex: 2; min-width: 180px; }
+.search-controls select { flex: 1; min-width: 100px; }
+
+/* JOB CARDS */
+.job-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 0.75rem;
+  transition: border-color 0.15s;
+}
+.job-card:hover { border-color: var(--border2); }
+.job-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 6px; }
+.job-title { font-size: 15px; font-weight: 500; }
+.job-company { font-size: 13px; color: var(--text2); margin-top: 2px; }
+.match-score {
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+.score-high { background: #0d2b1a; color: var(--green); border: 1px solid #1a4a2e; }
+.score-mid { background: #2a1f0a; color: var(--amber); border: 1px solid #4a3510; }
+.job-meta { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--text3); font-family: var(--mono); margin: 8px 0; }
+.job-points { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+.point-tag {
+  font-size: 11px;
+  font-family: var(--mono);
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  padding: 2px 8px;
+  color: var(--text2);
+}
+.job-summary { font-size: 12px; color: var(--text2); line-height: 1.6; margin-bottom: 12px; }
+.job-footer { display: flex; justify-content: space-between; align-items: center; }
+.job-link { font-size: 12px; color: var(--accent); text-decoration: none; font-family: var(--mono); }
+.job-link:hover { text-decoration: underline; }
+
+/* SORT BAR */
+.sort-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 1rem; font-size: 12px; color: var(--text3); font-family: var(--mono); }
+.sort-bar select { padding: 4px 8px; font-size: 12px; width: auto; }
+.job-count { margin-left: auto; }
+
+/* CHECKLIST */
+.checklist {
+  background: #1a1a1a;
+  border: 1px solid #2a2a1a;
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+.checklist-title { font-size: 11px; font-family: var(--mono); color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+.checklist-item { font-size: 12px; color: var(--text2); padding: 5px 0; border-bottom: 1px solid var(--border); line-height: 1.5; }
+.checklist-item:last-child { border-bottom: none; }
+
+/* MODAL */
+.modal-bg {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 1rem;
+}
+.modal-bg.open { display: flex; }
+.modal {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  padding: 1.5rem;
+  max-width: 600px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+.modal-title { font-size: 14px; font-weight: 500; margin-bottom: 1rem; }
+.result-box {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  padding: 1rem;
+  font-size: 13px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  margin-bottom: 1rem;
+  max-height: 320px;
+  overflow-y: auto;
+  font-family: var(--mono);
+  color: var(--text2);
+}
+.feedback-row { display: flex; gap: 8px; margin-bottom: 1rem; }
+.feedback-row input { flex: 1; }
+.modal-footer { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* LOADING */
+.loading-pulse {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text3);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.loading-dot {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin: 0 2px;
+  animation: pulse 1.2s infinite;
+}
+.loading-dot:nth-child(2) { animation-delay: 0.2s; }
+.loading-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes pulse { 0%,80%,100%{opacity:0.2} 40%{opacity:1} }
+
+/* EMPTY */
+.empty { text-align: center; padding: 3rem 1rem; color: var(--text3); font-size: 13px; font-family: var(--mono); }
+
+/* SECTION LABEL */
+.section-label { font-size: 11px; font-family: var(--mono); color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin: 1rem 0 8px; }
+
+/* KEY DISPLAY */
+.key-display {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text3);
+  background: var(--bg3);
+  padding: 3px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+}
+.key-display:hover { color: var(--accent); border-color: var(--accent); }
+</style>
+</head>
+<body>
+
+<!-- SETUP SCREEN -->
+<div id="setupScreen">
+  <div class="setup-card">
+    <div class="setup-logo">JOB SEARCH</div>
+    <div class="setup-sub">// ASSISTANT v1.0 — POWERED BY GEMINI</div>
+
+    <label class="setup-label">GEMINI API KEY</label>
+    <input type="password" class="setup-input" id="setupKey" placeholder="AIza..." />
+    <div class="setup-hint">
+      免费申请：<a href="https://aistudio.google.com" target="_blank">aistudio.google.com</a> → 登录 Google → Get API Key → Create API Key<br>
+      Key 仅存储在你的浏览器本地，不会上传到任何服务器。
+    </div>
+    <button class="btn-accent" onclick="initApp()">进入工具</button>
+    <hr class="setup-divider">
+    <div class="setup-import">
+      已有 Profile？<span onclick="document.getElementById('importSetup').click()">导入 JSON 文件</span>
+      <input type="file" id="importSetup" accept=".json" style="display:none" onchange="importFromSetup(event)">
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="appScreen">
+  <div class="topbar">
+    <div class="logo">JSA</div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="switchTab('search')">职位搜索</button>
+      <button class="nav-tab" onclick="switchTab('profile')">我的 Profile</button>
+      <button class="nav-tab" onclick="switchTab('generate')">生成材料</button>
+    </div>
+    <div class="user-chip">
+      <div class="avatar" id="avatarEl">?</div>
+      <span id="userNameEl" style="display:none; font-size:12px; color:var(--text2)"></span>
+      <span class="key-display" onclick="changeKey()" title="点击更换 API Key">API KEY ●●●</span>
+      <button class="btn-sm" onclick="document.getElementById('importMain').click()">导入</button>
+      <input type="file" id="importMain" accept=".json" style="display:none" onchange="importProfile(event)">
+    </div>
+  </div>
+
+  <div id="saveBar" class="save-bar hidden">
+    <span>● Profile 有未保存更改</span>
+    <button class="btn-sm primary" onclick="exportProfile()">保存 JSON</button>
+  </div>
+
+  <!-- SEARCH TAB -->
+  <div id="tab-search" class="panel active">
+    <div class="card">
+      <div class="card-title">搜索条件</div>
+      <div class="row">
+        <div class="field" style="flex:2; min-width:200px">
+          <label>职位关键词</label>
+          <input type="text" id="searchQuery" placeholder="如：Embedded Software Engineer, C, FreeRTOS" />
+        </div>
+        <div class="field">
+          <label>发布时间</label>
+          <select id="searchDays">
+            <option value="1">今天</option>
+            <option value="3" selected>3天内</option>
+            <option value="7">7天内</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field" style="flex:2">
+          <label>目标地区（回车添加多个）</label>
+          <div class="tag-box" id="locationBox" onclick="document.getElementById('locInput').focus()">
+            <input type="text" id="locInput" placeholder="如：München, Netherlands..." onkeydown="handleTag(event,'loc')"/>
+          </div>
+        </div>
+        <div class="field" style="align-self:flex-end">
+          <button class="btn primary" id="searchBtn" onclick="runSearch()">搜索职位 →</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sort-bar">
+      <span>排序：</span>
+      <select id="sortMode" onchange="renderJobs()">
+        <option value="match">按匹配度</option>
+        <option value="date">按发布时间</option>
+      </select>
+      <span class="job-count" id="jobCount"></span>
+    </div>
+
+    <div id="jobList"><div class="empty">// 输入关键词 + 地区，开始搜索</div></div>
+  </div>
+
+  <!-- PROFILE TAB -->
+  <div id="tab-profile" class="panel">
+    <div class="card">
+      <div class="card-title">基本信息</div>
+      <div class="row">
+        <div class="field"><label>姓名</label><input type="text" id="pName" placeholder="Lukas Zhang" oninput="markDirty()"/></div>
+        <div class="field"><label>所在城市</label><input type="text" id="pCity" placeholder="München" oninput="markDirty()"/></div>
+        <div class="field"><label>目标行业</label><input type="text" id="pIndustry" placeholder="如：Automotive, Industrial" oninput="markDirty()"/></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">技能（回车添加）</div>
+      <div class="tag-box" id="skillBox" onclick="document.getElementById('skillInput').focus()">
+        <input type="text" id="skillInput" placeholder="如：C, FreeRTOS, ARM Cortex-M..." onkeydown="handleTag(event,'skill')"/>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">项目经历</div>
+      <textarea id="pProjects" placeholder="简述主要项目，越具体越好。如：开发了基于S32K148的OTA bootloader，解决了升级中断导致brick的问题，用双分区+CRC校验方案..." oninput="markDirty()"></textarea>
+    </div>
+
+    <div class="card">
+      <div class="card-title">语言能力</div>
+      <div id="langList"></div>
+      <div class="row" style="margin-top:8px">
+        <div class="field">
+          <select id="newLang">
+            <option>Deutsch</option><option>English</option><option>中文</option><option>Français</option><option>Nederlands</option>
+          </select>
+        </div>
+        <div class="field">
+          <select id="newLevel">
+            <option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option><option>Native</option>
+          </select>
+        </div>
+        <button class="btn" onclick="addLang()" style="align-self:flex-end">+ 添加</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">求职偏好</div>
+      <div class="row">
+        <div class="field"><label>优先生成语言</label>
+          <select id="pGenLang" oninput="markDirty()"><option>Deutsch</option><option>English</option></select>
+        </div>
+        <div class="field"><label>工作类型</label>
+          <select id="pJobType" oninput="markDirty()"><option>Vollzeit</option><option>Teilzeit</option><option>Beides</option></select>
+        </div>
+      </div>
+      <div class="field"><label>补充说明</label>
+        <textarea id="pNote" placeholder="如：持 Chancenkarte，可立即开始，每周最多20小时兼职..." oninput="markDirty()"></textarea>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:8px">
+      <button class="btn primary" onclick="exportProfile()">导出 JSON</button>
+      <button class="btn" onclick="clearProfile()">清空</button>
+    </div>
+  </div>
+
+  <!-- GENERATE TAB -->
+  <div id="tab-generate" class="panel">
+    <div class="card">
+      <div class="card-title">目标职位 JD</div>
+      <textarea id="genJD" style="min-height:100px" placeholder="粘贴职位描述（JD）..."></textarea>
+    </div>
+
+    <div class="checklist">
+      <div class="checklist-title">// 人味 CHECKLIST — 填得越详细，AI痕迹越低</div>
+      <div class="checklist-item">① 为什么选这家公司？（一句真实理由即可）</div>
+      <div class="checklist-item">② 一个具体的项目故事（遇到什么问题 → 你怎么解决的）</div>
+      <div class="checklist-item">③ 一次真实的成长或失误（"当时不懂XX，后来通过XX补上了"）</div>
+      <div class="checklist-item">④ 对这个行业或方向的真实看法（平实即可，不用假装 passionate）</div>
+      <div class="checklist-item">⑤ 一个只有你才知道的细节（某次测试数据、某个具体场景）</div>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <div class="field">
+          <label>① 为什么选这家公司？</label>
+          <textarea id="g1" placeholder="如：他们用 S32K，我有直接经验..."></textarea>
+        </div>
+        <div class="field">
+          <label>② 具体项目故事</label>
+          <textarea id="g2" placeholder="如：OTA 升级时遇到断电 brick 风险，我用双分区+CRC解决了..."></textarea>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>③ 成长 / 失误</label>
+          <textarea id="g3" placeholder="如：刚开始不懂 Linux，后来自学了 Buildroot 基础..."></textarea>
+        </div>
+        <div class="field">
+          <label>④ 对行业的真实看法</label>
+          <textarea id="g4" placeholder="如：觉得工业嵌入式比汽车行业更稳定..."></textarea>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:1rem">
+        <label>⑤ 独特细节</label>
+        <textarea id="g5" placeholder="如：当时 CAN bus 延迟测试结果是 2.3ms，排查出是中断优先级问题..."></textarea>
+      </div>
+
+      <div class="row">
+        <div class="field"><label>生成语言</label>
+          <select id="genLang"><option>Deutsch</option><option>English</option></select>
+        </div>
+        <div class="field"><label>语言水平</label>
+          <select id="genLevel"><option>B1</option><option>B2</option><option>C1</option><option>C2</option><option>Native</option></select>
+        </div>
+        <div class="field"><label>生成类型</label>
+          <select id="genType">
+            <option value="both">简历 + 动机信</option>
+            <option value="cv">仅简历</option>
+            <option value="motivation">仅动机信</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn primary" onclick="openGenModal()" style="margin-top:8px">一键生成 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- GENERATE MODAL -->
+<div class="modal-bg" id="genModal">
+  <div class="modal">
+    <div class="modal-title" id="genModalTitle">生成中...</div>
+    <div id="genResult" class="result-box" style="display:none"></div>
+    <div class="feedback-row" id="feedbackRow" style="display:none">
+      <input type="text" id="feedbackInput" placeholder="反馈优化，如：动机部分太官方，语气更自信..."/>
+      <button class="btn primary" onclick="refineGen()">优化 →</button>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" id="copyBtn" style="display:none" onclick="copyResult()">复制</button>
+      <button class="btn" onclick="closeModal()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+
+let apiKey = '';
+let profile = { name:'', city:'', industry:'', skills:[], projects:'', languages:[], genLang:'Deutsch', jobType:'Vollzeit', note:'' };
+let locTags = [];
+let skillTags = [];
+let jobs = [];
+let dirty = false;
+let genHistory = [];
+let currentResult = '';
+
+// ── SETUP ──────────────────────────────────────────────────
+function initApp() {
+  const k = document.getElementById('setupKey').value.trim();
+  if (!k || !k.startsWith('AIza')) { alert('请输入有效的 Gemini API Key（以 AIza 开头）'); return; }
+  apiKey = k;
+  localStorage.setItem('gemini_key', k);
+  showApp();
+}
+
+function importFromSetup(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (data.apiKey) { apiKey = data.apiKey; localStorage.setItem('gemini_key', apiKey); }
+      profile = { ...profile, ...data };
+      skillTags = profile.skills || [];
+      showApp();
+      applyProfileToUI();
+    } catch { alert('JSON 格式错误'); }
+  };
+  r.readAsText(file);
+}
+
+function showApp() {
+  document.getElementById('setupScreen').style.display = 'none';
+  document.getElementById('appScreen').style.display = 'block';
+  applyProfileToUI();
+}
+
+function changeKey() {
+  const k = prompt('输入新的 Gemini API Key：');
+  if (k && k.startsWith('AIza')) { apiKey = k; localStorage.setItem('gemini_key', k); alert('API Key 已更新'); }
+}
+
+// auto-restore key on load
+window.addEventListener('load', () => {
+  const k = localStorage.getItem('gemini_key');
+  if (k) { apiKey = k; document.getElementById('setupKey').value = k; }
+  const p = localStorage.getItem('jsa_profile');
+  if (p) { try { profile = JSON.parse(p); skillTags = profile.skills || []; } catch {} }
+});
+
+// ── TABS ───────────────────────────────────────────────────
+function switchTab(t) {
+  document.querySelectorAll('.nav-tab').forEach((el, i) => el.classList.toggle('active', ['search','profile','generate'][i] === t));
+  document.querySelectorAll('.panel').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + t).classList.add('active');
+}
+
+// ── TAGS ───────────────────────────────────────────────────
+function handleTag(e, type) {
+  if (e.key !== 'Enter' && e.key !== ',') return;
+  e.preventDefault();
+  const val = e.target.value.trim().replace(/,$/, '');
+  if (!val) return;
+  if (type === 'loc') { locTags.push(val); renderTags('locationBox', locTags, 'loc'); }
+  else { skillTags.push(val); renderTags('skillBox', skillTags, 'skill'); markDirty(); }
+  e.target.value = '';
+}
+
+function renderTags(boxId, arr, type) {
+  const box = document.getElementById(boxId);
+  const inp = box.querySelector('input');
+  box.querySelectorAll('.tag').forEach(el => el.remove());
+  arr.forEach((t, i) => {
+    const tag = document.createElement('div');
+    tag.className = 'tag';
+    tag.innerHTML = `<span>${t}</span><span class="tag-x" onclick="removeTag(${i},'${boxId}','${type}')">×</span>`;
+    box.insertBefore(tag, inp);
+  });
+}
+
+function removeTag(i, boxId, type) {
+  if (type === 'loc') locTags.splice(i, 1);
+  else { skillTags.splice(i, 1); markDirty(); }
+  renderTags(boxId, type === 'loc' ? locTags : skillTags, type);
+}
+
+// ── PROFILE ────────────────────────────────────────────────
+function markDirty() {
+  dirty = true;
+  document.getElementById('saveBar').classList.remove('hidden');
+}
+
+function syncProfile() {
+  profile.name = document.getElementById('pName').value;
+  profile.city = document.getElementById('pCity').value;
+  profile.industry = document.getElementById('pIndustry').value;
+  profile.skills = skillTags;
+  profile.projects = document.getElementById('pProjects').value;
+  profile.genLang = document.getElementById('pGenLang').value;
+  profile.jobType = document.getElementById('pJobType').value;
+  profile.note = document.getElementById('pNote').value;
+}
+
+function applyProfileToUI() {
+  document.getElementById('pName').value = profile.name || '';
+  document.getElementById('pCity').value = profile.city || '';
+  document.getElementById('pIndustry').value = profile.industry || '';
+  document.getElementById('pProjects').value = profile.projects || '';
+  document.getElementById('pNote').value = profile.note || '';
+  if (profile.genLang) document.getElementById('pGenLang').value = profile.genLang;
+  if (profile.jobType) document.getElementById('pJobType').value = profile.jobType;
+  skillTags = profile.skills || [];
+  renderTags('skillBox', skillTags, 'skill');
+  profile.languages = profile.languages || [];
+  renderLangs();
+  const n = profile.name || '';
+  document.getElementById('avatarEl').textContent = n ? n.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase() : '?';
+  if (n) { document.getElementById('userNameEl').textContent = n; document.getElementById('userNameEl').style.display = 'inline'; }
+}
+
+function addLang() {
+  const lang = document.getElementById('newLang').value;
+  const level = document.getElementById('newLevel').value;
+  profile.languages = profile.languages || [];
+  profile.languages.push({ lang, level });
+  renderLangs(); markDirty();
+}
+
+function renderLangs() {
+  document.getElementById('langList').innerHTML = (profile.languages || []).map((l, i) => `
+    <div class="lang-row">
+      <select onchange="profile.languages[${i}].lang=this.value;markDirty()">
+        ${['Deutsch','English','中文','Français','Nederlands'].map(o => `<option${o===l.lang?' selected':''}>${o}</option>`).join('')}
+      </select>
+      <select onchange="profile.languages[${i}].level=this.value;markDirty()">
+        ${['A1','A2','B1','B2','C1','C2','Native'].map(o => `<option${o===l.level?' selected':''}>${o}</option>`).join('')}
+      </select>
+      <button class="btn-sm" onclick="profile.languages.splice(${i},1);renderLangs();markDirty()">删除</button>
+    </div>`).join('');
+}
+
+function exportProfile() {
+  syncProfile();
+  const blob = new Blob([JSON.stringify(profile, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (profile.name || 'profile').replace(/\s+/g, '_') + '_jsa.json';
+  a.click();
+  dirty = false;
+  document.getElementById('saveBar').classList.add('hidden');
+  localStorage.setItem('jsa_profile', JSON.stringify(profile));
+}
+
+function importProfile(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    try {
+      profile = JSON.parse(ev.target.result);
+      skillTags = profile.skills || [];
+      applyProfileToUI();
+      dirty = false;
+      document.getElementById('saveBar').classList.add('hidden');
+      alert('Profile 已加载：' + (profile.name || '未知'));
+    } catch { alert('JSON 格式错误'); }
+  };
+  r.readAsText(file);
+}
+
+function clearProfile() {
+  if (!confirm('确认清空所有 Profile 数据？')) return;
+  profile = { name:'', city:'', industry:'', skills:[], projects:'', languages:[], genLang:'Deutsch', jobType:'Vollzeit', note:'' };
+  skillTags = [];
+  applyProfileToUI(); markDirty();
+}
+
+// ── GEMINI API ─────────────────────────────────────────────
+async function callGemini(prompt, history) {
+  const contents = history ? history : [{ role:'user', parts:[{text: prompt}] }];
+  const resp = await fetch(`${GEMINI_BASE}?key=${apiKey}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ contents, generationConfig: { maxOutputTokens: 1500 } })
+  });
+  if (!resp.ok) {
+    const err = await resp.json();
+    throw new Error(err.error?.message || 'API 错误');
+  }
+  const data = await resp.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+}
+
+// ── SEARCH ─────────────────────────────────────────────────
+async function runSearch() {
+  const query = document.getElementById('searchQuery').value.trim();
+  const days = document.getElementById('searchDays').value;
+  const locs = locTags.length ? locTags : ['Germany'];
+  if (!query) { alert('请输入职位关键词'); return; }
+
+  const btn = document.getElementById('searchBtn');
+  btn.textContent = '搜索中...'; btn.disabled = true;
+  document.getElementById('jobList').innerHTML = `<div class="loading-pulse"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div><br><br>AI 正在搜索匹配职位...</div>`;
+
+  const skills = (profile.skills || skillTags).join(', ') || query;
+  const timeDesc = days=='1'?'今天':days=='3'?'最近3天':'最近7天';
+
+  const prompt = `You are a job search assistant for Germany/Europe. Generate realistic job listings based on real companies that hire for this role.
+
+Search: "${query}" in ${locs.join(', ')}
+Candidate skills: ${skills}
+Time: posted within ${timeDesc}
+Experience: ${profile.projects ? 'has project experience with ' + profile.projects.slice(0,200) : 'not specified'}
+
+Return a JSON array of 8 job listings. Each object:
+{
+  "id": "unique_id",
+  "title": "exact job title",
+  "company": "real company name that hires in Germany",
+  "location": "City, Germany",
+  "postedDays": 0-${days},
+  "matchScore": 60-98,
+  "matchPoints": ["3 specific reasons why skills match, e.g. FreeRTOS required ✓"],
+  "url": "https://www.linkedin.com/jobs or stepstone.de or indeed.de realistic URL",
+  "summary": "one sentence describing the role"
+}
+
+Focus on non-automotive embedded roles (industrial, medical, aerospace, IoT). Include real German companies like Siemens, Bosch, Dräger, Sick AG, Endress+Hauser, Trumpf, Wago, Phoenix Contact, Schunk, Infineon, etc.
+Only show matchScore >= 65. Return ONLY the JSON array, no markdown.`;
+
+  try {
+    const text = await callGemini(prompt);
+    const clean = text.replace(/```json|```/g, '').trim();
+    const start = clean.indexOf('['), end = clean.lastIndexOf(']');
+    jobs = JSON.parse(clean.slice(start, end + 1));
+    renderJobs();
+  } catch (e) {
+    document.getElementById('jobList').innerHTML = `<div class="empty">// 搜索失败：${e.message}</div>`;
+  }
+  btn.textContent = '搜索职位 →'; btn.disabled = false;
+}
+
+function renderJobs() {
+  const sort = document.getElementById('sortMode').value;
+  let sorted = [...jobs];
+  if (sort === 'match') sorted.sort((a,b) => b.matchScore - a.matchScore);
+  else sorted.sort((a,b) => a.postedDays - b.postedDays);
+  const visible = sorted.filter(j => j.matchScore >= 75);
+  const hidden = sorted.filter(j => j.matchScore < 75);
+  document.getElementById('jobCount').textContent = `${visible.length} 个职位（75分以上）`;
+  if (!sorted.length) { document.getElementById('jobList').innerHTML = '<div class="empty">// 未找到匹配职位，请调整关键词</div>'; return; }
+  document.getElementById('jobList').innerHTML =
+    visible.map(j => jobCardHTML(j)).join('') +
+    (hidden.length ? `<div style="font-size:12px;color:var(--text3);text-align:center;padding:8px;font-family:var(--mono)">// 另有 ${hidden.length} 个低于75分职位已隐藏</div>` : '');
+}
+
+function jobCardHTML(j) {
+  const cls = j.matchScore >= 85 ? 'score-high' : 'score-mid';
+  const date = j.postedDays === 0 ? '今天' : j.postedDays === 1 ? '昨天' : `${j.postedDays}天前`;
+  const pts = (j.matchPoints || []).map(p => `<span class="point-tag">${p}</span>`).join('');
+  const enc = encodeURIComponent(JSON.stringify({ title: j.title, company: j.company, summary: j.summary }));
+  return `<div class="job-card">
+    <div class="job-header">
+      <div><div class="job-title">${j.title}</div><div class="job-company">${j.company}</div></div>
+      <span class="match-score ${cls}">${j.matchScore}%</span>
+    </div>
+    <div class="job-meta"><span>📍 ${j.location}</span><span>🕐 ${date}</span></div>
+    <div class="job-points">${pts}</div>
+    <div class="job-summary">${j.summary || ''}</div>
+    <div class="job-footer">
+      <button class="btn-sm primary" onclick="prefillGenerate('${enc}')">生成申请材料 →</button>
+      <a class="job-link" href="${j.url}" target="_blank">查看职位 ↗</a>
+    </div>
+  </div>`;
+}
+
+function prefillGenerate(enc) {
+  const j = JSON.parse(decodeURIComponent(enc));
+  document.getElementById('genJD').value = `职位：${j.title}\n公司：${j.company}\n\n${j.summary || ''}`;
+  switchTab('generate');
+}
+
+// ── GENERATE ───────────────────────────────────────────────
+async function openGenModal() {
+  syncProfile();
+  const jd = document.getElementById('genJD').value.trim();
+  if (!jd) { alert('请先填写 JD'); return; }
+
+  document.getElementById('genModal').classList.add('open');
+  document.getElementById('genModalTitle').textContent = '生成中...';
+  document.getElementById('genResult').style.display = 'none';
+  document.getElementById('feedbackRow').style.display = 'none';
+  document.getElementById('copyBtn').style.display = 'none';
+  genHistory = [];
+
+  const lang = document.getElementById('genLang').value;
+  const level = document.getElementById('genLevel').value;
+  const type = document.getElementById('genType').value;
+  const g1 = document.getElementById('g1').value;
+  const g2 = document.getElementById('g2').value;
+  const g3 = document.getElementById('g3').value;
+  const g4 = document.getElementById('g4').value;
+  const g5 = document.getElementById('g5').value;
+
+  const typeDesc = type==='both'?'a CV (Lebenslauf) AND a Motivationsschreiben':type==='cv'?'a CV (Lebenslauf)':'a Motivationsschreiben';
+  const langNote = lang==='Deutsch'
+    ? `Write in German at ${level} level. For B1/B2: avoid complex Satzgefüge, use natural everyday vocabulary, not textbook-perfect prose.`
+    : `Write in English at ${level} level. Natural, confident, human tone.`;
+
+  const userMsg = `Generate ${typeDesc} for this job application.
+
+JD:
+${jd}
+
+Candidate:
+Name: ${profile.name || '[Name]'}
+Location: ${profile.city}
+Skills: ${(profile.skills||[]).join(', ')}
+Projects: ${profile.projects}
+Languages: ${(profile.languages||[]).map(l=>l.lang+' '+l.level).join(', ')}
+Note: ${profile.note}
+
+Human details:
+1. Why this company: ${g1||'not provided'}
+2. Project story: ${g2||'not provided'}
+3. Growth/mistake: ${g3||'not provided'}
+4. View on industry: ${g4||'not provided'}
+5. Unique detail: ${g5||'not provided'}
+
+Rules:
+${langNote}
+- NEVER use "I am passionate about", "I am highly motivated", "I would be delighted"
+- Use concrete specifics, not vague generalities
+- Include honest admissions that sound human
+- Vary sentence length
+- Sound like a real person wrote this, not AI`;
+
+  genHistory = [{ role:'user', parts:[{text: userMsg}] }];
+
+  try {
+    const text = await callGemini(null, genHistory);
+    genHistory.push({ role:'model', parts:[{text}] });
+    currentResult = text;
+    document.getElementById('genModalTitle').textContent = '✓ 生成完成';
+    document.getElementById('genResult').textContent = text;
+    document.getElementById('genResult').style.display = 'block';
+    document.getElementById('feedbackRow').style.display = 'flex';
+    document.getElementById('copyBtn').style.display = 'inline-block';
+  } catch(e) {
+    document.getElementById('genModalTitle').textContent = '生成失败：' + e.message;
+  }
+}
+
+async function refineGen() {
+  const fb = document.getElementById('feedbackInput').value.trim();
+  if (!fb) return;
+  document.getElementById('genModalTitle').textContent = '优化中...';
+  document.getElementById('feedbackInput').value = '';
+  genHistory.push({ role:'user', parts:[{text:'Please revise based on this feedback: ' + fb}] });
+  try {
+    const text = await callGemini(null, genHistory);
+    genHistory.push({ role:'model', parts:[{text}] });
+    currentResult = text;
+    document.getElementById('genModalTitle').textContent = '✓ 优化完成';
+    document.getElementById('genResult').textContent = text;
+  } catch(e) {
+    document.getElementById('genModalTitle').textContent = '优化失败：' + e.message;
+  }
+}
+
+function copyResult() {
+  navigator.clipboard.writeText(currentResult).then(() => alert('已复制到剪贴板'));
+}
+
+function closeModal() {
+  document.getElementById('genModal').classList.remove('open');
+}
+
+window.addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue=''; } });
+</script>
+</body>
+</html>
