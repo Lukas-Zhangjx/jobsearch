@@ -844,48 +844,83 @@ async function callDeepSeek(prompt, history) {
   return data.choices?.[0]?.message?.content || '';
 }
 
-// ── SEARCH ─────────────────────────────────────────────────
+// ── SEARCH (Arbeitnow API) ─────────────────────────────────
 async function runSearch() {
   const query = document.getElementById('searchQuery').value.trim();
-  const days = document.getElementById('searchDays').value;
-  const locs = locTags.length ? locTags : ['Germany'];
+  const days = parseInt(document.getElementById('searchDays').value);
   if (!query) { alert('请输入职位关键词'); return; }
 
   const btn = document.getElementById('searchBtn');
   btn.textContent = '搜索中...'; btn.disabled = true;
-  document.getElementById('jobList').innerHTML = `<div class="loading-pulse"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div><br><br>AI 正在搜索匹配职位...</div>`;
+  document.getElementById('jobList').innerHTML = `<div class="loading-pulse"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div><br><br>正在获取真实职位数据...</div>`;
 
   const skills = (profile.skills || skillTags).join(', ') || query;
-  const timeDesc = days=='1'?'今天':days=='3'?'最近3天':'最近7天';
-
-  const prompt = `You are a job search assistant for Germany/Europe. Generate realistic job listings based on real companies that hire for this role.
-
-Search: "${query}" in ${locs.join(', ')}
-Candidate skills: ${skills}
-Time: posted within ${timeDesc}
-Experience: ${profile.projects ? 'has project experience with ' + profile.projects.slice(0,200) : 'not specified'}
-
-Return a JSON array of 8 job listings. Each object:
-{
-  "id": "unique_id",
-  "title": "exact job title",
-  "company": "real company name that hires in Germany",
-  "location": "City, Germany",
-  "postedDays": 0-${days},
-  "matchScore": 60-98,
-  "matchPoints": ["3 specific reasons why skills match, e.g. FreeRTOS required ✓"],
-  "url": "https://www.linkedin.com/jobs or stepstone.de or indeed.de realistic URL",
-  "summary": "one sentence describing the role"
-}
-
-Focus on non-automotive embedded roles (industrial, medical, aerospace, IoT). Include real German companies like Siemens, Bosch, Dräger, Sick AG, Endress+Hauser, Trumpf, Wago, Phoenix Contact, Schunk, Infineon, etc.
-Only show matchScore >= 65. Return ONLY the JSON array, no markdown.`;
 
   try {
-    const text = await callDeepSeek(prompt);
-    const clean = text.replace(/```json|```/g, '').trim();
+    // Fetch from Arbeitnow API
+    const url = `https://www.arbeitnow.com/api/job-board-api?search=${encodeURIComponent(query)}&page=1`;
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('Arbeitnow API 请求失败');
+    const data = await resp.json();
+    const rawJobs = data.data || [];
+
+    if (!rawJobs.length) {
+      document.getElementById('jobList').innerHTML = '<div class="empty">// 未找到相关职位，请换个关键词试试</div>';
+      btn.textContent = '搜索职位 →'; btn.disabled = false;
+      return;
+    }
+
+    // Filter by date
+    const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+    const filtered = rawJobs.filter(j => {
+      if (!j.created_at) return true;
+      return new Date(j.created_at * 1000) >= cutoff;
+    }).slice(0, 20);
+
+    const jobsToScore = filtered.length ? filtered : rawJobs.slice(0, 15);
+
+    // Use AI to score matches
+    const jobSummaries = jobsToScore.map((j, i) => ({
+      index: i,
+      title: j.title,
+      company: j.company_name,
+      description: (j.description || '').slice(0, 300)
+    }));
+
+    const scorePrompt = `You are a job match scorer. Score each job for this candidate.
+
+Candidate skills: ${skills}
+Candidate projects: ${(profile.projects||'').slice(0,200)}
+
+Jobs to score:
+${JSON.stringify(jobSummaries, null, 2)}
+
+Return a JSON array with one object per job:
+{"index": N, "matchScore": 0-100, "matchPoints": ["reason1 ✓", "reason2 ✓", "reason3"]}
+
+Be honest with scores. Only give 80+ if skills truly match. Return ONLY the JSON array.`;
+
+    const scoreText = await callDeepSeek(scorePrompt);
+    const clean = scoreText.replace(/\`\`\`json|\`\`\`/g, '').trim();
     const start = clean.indexOf('['), end = clean.lastIndexOf(']');
-    jobs = JSON.parse(clean.slice(start, end + 1));
+    const scores = JSON.parse(clean.slice(start, end + 1));
+
+    jobs = jobsToScore.map((j, i) => {
+      const score = scores.find(s => s.index === i) || { matchScore: 60, matchPoints: [] };
+      const createdAt = j.created_at ? Math.floor((Date.now()/1000 - j.created_at) / 86400) : 1;
+      return {
+        id: j.slug || i,
+        title: j.title,
+        company: j.company_name,
+        location: j.location || 'Germany',
+        postedDays: Math.max(0, createdAt),
+        matchScore: score.matchScore,
+        matchPoints: score.matchPoints || [],
+        url: j.url || `https://www.arbeitnow.com/jobs/${j.slug}`,
+        summary: (j.description || '').replace(/<[^>]*>/g, '').slice(0, 120) + '...'
+      };
+    });
+
     renderJobs();
   } catch (e) {
     document.getElementById('jobList').innerHTML = `<div class="empty">// 搜索失败：${e.message}</div>`;
